@@ -52,8 +52,7 @@ Sabit 100 soru haricinde kullanıcıların 15, 20, 30, 40 veya 50 soruluk mini s
 
 ## 📊 Gelecek Sürümler Yol Haritası Tablosu
 
-| Hedeflenen Özellik | Zorluk | Öncelik | Hedef Sürüm | Durum |
-| :--- | :---: | :---: | :---: | :---: |
-| **Çoklu Kitapçık Desteği (A/B/C/D)** | Kolay | 🔴 Yüksek (P0) | **v2.2.0** | ✅ **Tamamlandı** |
-| **Kamera ile Canlı Vizör & Auto-Capture** | Orta | 🟡 Orta (P1) | **v2.3.0** | ⏳ *Planlandı* |
-| **Şablon Sihirbazı & Şablon Mağazası** | Kapsamlı | 🔵 Gelecek (P2) | **v3.0.0** | ⏳ *Planlandı* |
+| # | Hedeflenen Özellik | Zorluk | Öncelik | Hedef Sürüm |
+| :-: | :--- | :---: | :---: | :---: |
+| **1** | **Kamera ile Canlı Vizör & Auto-Capture (Webcam/Mobil)** | Orta | 🔴 Yüksek (P1) | **v2.3.0** |
+| **2** | **Özelleştirilebilir Şablon Sihirbazı & Şablon Mağazası** | Kapsamlı | 🟡 Gelecek (P2) | **v3.0.0** |
