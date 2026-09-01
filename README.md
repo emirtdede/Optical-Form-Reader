@@ -38,7 +38,7 @@
   <img src="public/product-logo.svg" alt="Optical Form Reader Logo" width="130" height="130" />
   <h3>Optical Form Reader — High-Performance Browser-Based OMR & Grading Engine</h3>
   <p><em>100% Client-Side, Privacy-First, Zero-Server Optical Mark Recognition Suite with Turkish Higher Education (YÖK) 3-Tier Grading & Bell Curve (T-Score) Integration</em></p>
-  <p><strong>Developed & Maintained by <a href="https://github.com/emirtdede">emirtdede</a> &bull; Powered by <a href="https://vellium.dev">Vellium</a></strong></p>
+  <p><strong>Developed & Published by <a href="https://vellium.dev">Vellium</a></strong> &bull; <strong>Live Application: <a href="https://optikformokuyucu.vercel.app">optikformokuyucu.vercel.app</a></strong></p>
 </div>
 
 <br>
@@ -278,7 +278,7 @@ flowchart TD
 
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
 
-**Author**: [emirtdede](https://github.com/emirtdede) &bull; **Powered by**: [Vellium](https://vellium.dev)
+**Official Website**: [Vellium.dev](https://vellium.dev) &bull; **Publisher**: Vellium
 
 ---
 
@@ -293,7 +293,7 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
   <img src="public/product-logo.svg" alt="Optik Form Okuyucu Logo" width="130" height="130" />
   <h3>Optik Form Okuyucu — Yüksek Performanslı Tarayıcı Tabanlı OMR ve Notlandırma Sistemi</h3>
   <p><em>Öğrenci Verilerini Cihazdan Çıkarmayan, %100 İstemci Taraflı, YÖK 3'lü Not Baremi ve Çan Eğrisi (T-Skor) Destekli Optik Değerlendirme Çözümü</em></p>
-  <p><strong>Geliştirici: <a href="https://github.com/emirtdede">emirtdede</a> &bull; Destekleyen: <a href="https://vellium.dev">Vellium</a></strong></p>
+  <p><strong>Geliştirici ve Yayıncı: <a href="https://vellium.dev">Vellium</a></strong> &bull; <strong>Canlı Web Uygulaması: <a href="https://optikformokuyucu.vercel.app">optikformokuyucu.vercel.app</a></strong></p>
 </div>
 
 <br>
@@ -485,4 +485,4 @@ Optical-Form-Reader/
 
 Bu proje **MIT Lisansı** ile lisanslanmıştır. Detaylar için [`LICENSE`](LICENSE) dosyasına başvurabilirsiniz.
 
-**Geliştirici**: [emirtdede](https://github.com/emirtdede) &bull; **Destekleyen**: [Vellium](https://vellium.dev)
+**Resmi Web Sitesi**: [Vellium.dev](https://vellium.dev) &bull; **Yayıncı**: Vellium
