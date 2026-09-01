@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, Check, ChevronRight, CircleStop, Download, FileArchive, FileCheck2, FileImage,
+  AlertCircle, Camera, Check, ChevronRight, CircleStop, Download, FileArchive, FileCheck2, FileImage,
   FileText, Files, FolderOpen, Gauge, Layers3, LoaderCircle, LockKeyhole, Play, RotateCcw,
   Sparkles, Trash2, X,
 } from 'lucide-react';
@@ -23,6 +23,7 @@ import {
 } from '../storage/database';
 import { getDefaultSections } from '../domain/grading';
 import { SectionConfigPanel } from '../components/SectionConfigPanel';
+import { CameraScannerModal } from '../components/CameraScannerModal';
 import type {
   AnswerChoice, BookletType, ExamSection, ExamSession, ProcessingJob, ProcessingSettings, QueueItem, SessionProgress, StudentResult,
 } from '../types';
@@ -89,6 +90,7 @@ export function ScannerPage() {
   const [message, setMessage] = useState<{ type: 'error' | 'warning' | 'success'; text: string } | null>(null);
   const [savedSessionId, setSavedSessionId] = useState<string | null>(null);
   const [visibleQueueCount, setVisibleQueueCount] = useState(200);
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
   const poolRef = useRef<OmrWorkerPool | null>(null);
   const cancelledRef = useRef(false);
   const sessionRef = useRef<ExamSession | null>(null);
@@ -657,8 +659,19 @@ export function ScannerPage() {
         <article className="setup-card">
           <div className="setup-card-top"><span className="setup-number">02</span><div><h2>Öğrenci formları</h2><p>Sabit adet sınırı yok · PDF sayfaları ayrı formdur</p></div><span className="file-count-badge">{queue.length} form</span></div>
           <div className="drop-zone" onDragOver={(event) => event.preventDefault()} onDrop={handleDrop}>
-            <FolderOpen /><span><strong>Dosyaları seçin veya buraya bırakın</strong><small>JPG, PNG, WebP, PDF ve görüntü içeren ZIP</small></span>
-            <label className="button button-secondary"><Files size={17} /> Toplu seç<input type="file" multiple accept="image/jpeg,image/png,image/webp,.pdf,application/pdf,.zip,application/zip" disabled={processing} onChange={handleStudentFiles} /></label>
+            <FolderOpen /><span><strong>Kamera ile canlı tarayın veya dosyaları buraya bırakın</strong><small>JPG, PNG, WebP, PDF ve görüntü içeren ZIP</small></span>
+            <div className="drop-zone-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginTop: 4 }}>
+              <button
+                type="button"
+                className="button button-primary camera-scan-btn"
+                disabled={processing}
+                onClick={() => setIsCameraModalOpen(true)}
+                title="Kameranızı açarak 1 saniyede eller serbest otomatik tarama yapın"
+              >
+                <Camera size={17} /> Canlı Kamera ile Tara
+              </button>
+              <label className="button button-secondary"><Files size={17} /> Toplu Dosya Seç<input type="file" multiple accept="image/jpeg,image/png,image/webp,.pdf,application/pdf,.zip,application/zip" disabled={processing} onChange={handleStudentFiles} /></label>
+            </div>
           </div>
         </article>
       </section>
@@ -733,6 +746,12 @@ export function ScannerPage() {
           <div className="table-scroll"><table><thead><tr><th>Öğrenci no</th><th>Kitapçık</th><th>Part</th><th>Dosya</th><th>Doğru</th><th>Yanlış</th><th>Boş</th><th>Net</th></tr></thead><tbody>{results.slice(0, 200).map((result) => <tr key={result.id}><td><strong>{result.studentNumber}</strong>{result.studentNumberNeedsReview && <span className="review-dot" title="Kontrol gerekli" />}</td><td><span className={`booklet-chip booklet-${result.booklet ?? 'A'}`}>{result.booklet ?? 'A'}</span></td><td>{(result.partIndex ?? 0) + 1}</td><td>{result.sourceName}</td><td className="text-success">{result.score.correct}</td><td className="text-danger">{result.score.wrong}</td><td>{result.score.blank}</td><td><strong>{result.score.net}</strong></td></tr>)}</tbody></table></div>
         </section>
       )}
+
+      <CameraScannerModal
+        isOpen={isCameraModalOpen}
+        onClose={() => setIsCameraModalOpen(false)}
+        onAddFiles={(files) => void addFiles(files)}
+      />
     </div>
   );
 }

@@ -3,40 +3,25 @@
 **Ürün:** Optik Form Okuyucu  
 **Geliştirici & Yayıncı:** Vellium  
 **Kapsam:** Gelecek Sürümler İçin Planlanan Hedefler  
-**Son Güncelleme:** Eylül 2026 (v2.2.0 Sürümü)  
+**Son Güncelleme:** Eylül 2026 (v2.3.0 Sürümü)  
 
 ---
 
-## 🚀 Planlanan Gelecek Özellikleri (Öncelik Sırasıyla)
+## 🚀 Planlanan Gelecek Özelliği
 
-Sistemi dünya standartlarında bir ürüne ulaştıracak ve kurumsal sınav uyumluluğunu en üst düzeye çıkaracak gelecek hedefleri:
+Sistemi dünya standartlarında bir ekosisteme ulaştıracak ve kurumsal sınav uyumluluğunu %100 tam olgunluğa çıkaracak ana hedefimiz:
 
 ```mermaid
 flowchart LR
-    A["Aşama 1 (Orta)"] -->|Kamera ile Canlı Tarama| B["Aşama 2 (Kapsamlı)"]
-    B -->|Özel Şablon Sihirbazı & Mağaza| C["100/100 Tam Olgunluk"]
+    A["Aşama 1: v2.3.0 (Canlı Kamera)"] -->|✅ Tamamlandı| B["Aşama 2: v3.0.0 (Özel Şablon Sihirbazı & Mağaza)"]
+    B --> C["💯 %100 Tam Olgunluk"]
 ```
 
 ---
 
-### 🟡 Aşama 1: Kamera ile Canlı / Anlık Tarama (Webcam & Telefon Kamerası)
-* **Zorluk Seviyesi:** **Orta (Tahmini Efor: 3 – 5 Saat)**
-* **Öncelik:** **Orta (P1)**
-* **Planlanan Sürüm:** **v2.3.0**
-
-#### Hedef & Kapsam:
-Öğretmenlerin kağıtları tek tek tarayıcıdan geçirmek veya fotoğraf yüklemek yerine telefon/bilgisayar kamerasını kağıda tutarak 1 saniyede anlık okutabilmesi.
-
-#### Teknik Uygulama Planı:
-1. **Canlı Video Akışı:** Tarayıcının yerel `navigator.mediaDevices.getUserMedia` API'si ile video vizörünün açılması.
-2. **Görsel Kılavuz & Vizör:** Ekranda optik form sınırlarını gösteren dinamik bir hizalama çerçevesi.
-3. **Akıllı Otomatik Yakalama (Auto-Capture):** OpenCV.js ile saniyede 3–5 kare işlenerek formun 4 köşe siyah kılavuz noktası yüksek güvenilirlikle algılandığında çerçevenin yeşile dönmesi, "Bip" sesi/titreşim eşliğinde fotoğrafın otomatik çekilip sonuç listesine eklenmesi.
-
----
-
-### 🔴 Aşama 2: Özelleştirilebilir Şablon Sihirbazı & Şablon Mağazası
+### 🔴 Aşama 1: Özelleştirilebilir Şablon Sihirbazı & Şablon Mağazası
 * **Zorluk Seviyesi:** **Kapsamlı (Tahmini Efor: 1 – 2 Gün)**
-* **Öncelik:** **Gelecek Sürüm (P2)**
+* **Öncelik:** **Gelecek Ana Sürüm (P1)**
 * **Planlanan Sürüm:** **v3.0.0**
 
 #### Hedef & Kapsam:
@@ -54,5 +39,4 @@ Sabit 100 soru haricinde kullanıcıların 15, 20, 30, 40 veya 50 soruluk mini s
 
 | # | Hedeflenen Özellik | Zorluk | Öncelik | Hedef Sürüm |
 | :-: | :--- | :---: | :---: | :---: |
-| **1** | **Kamera ile Canlı Vizör & Auto-Capture (Webcam/Mobil)** | Orta | 🔴 Yüksek (P1) | **v2.3.0** |
-| **2** | **Özelleştirilebilir Şablon Sihirbazı & Şablon Mağazası** | Kapsamlı | 🟡 Gelecek (P2) | **v3.0.0** |
+| **1** | **Özelleştirilebilir Şablon Sihirbazı & Şablon Mağazası** | Kapsamlı | 🔴 Yüksek (P1) | **v3.0.0** |
