@@ -38,7 +38,7 @@
   <img src="public/product-logo.svg" alt="Optical Form Reader Logo" width="130" height="130" />
   <h3>Optical Form Reader — High-Performance Browser-Based OMR & Grading Engine</h3>
   <p><em>100% Client-Side, Privacy-First, Zero-Server Optical Mark Recognition Suite with Turkish Higher Education (YÖK) 3-Tier Grading & Bell Curve (T-Score) Integration</em></p>
-  <p><strong>Developed & Published by <a href="https://vellium.dev">Vellium</a></strong> &bull; <strong>Live Application: <a href="https://optical-form-reader.vercel.app">optical-form-reader.vercel.app</a></strong></p>
+  <p><strong>Developed & Published by <a href="https://vellium.dev">Vellium</a></strong> &bull; <strong>Live Application: <a href="https://optikformokuyucu.vercel.app">optikformokuyucu.vercel.app</a></strong></p>
 </div>
 
 <br>
@@ -293,7 +293,7 @@ Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more informa
   <img src="public/product-logo.svg" alt="Optik Form Okuyucu Logo" width="130" height="130" />
   <h3>Optik Form Okuyucu — Yüksek Performanslı Tarayıcı Tabanlı OMR ve Notlandırma Sistemi</h3>
   <p><em>Öğrenci Verilerini Cihazdan Çıkarmayan, %100 İstemci Taraflı, YÖK 3'lü Not Baremi ve Çan Eğrisi (T-Skor) Destekli Optik Değerlendirme Çözümü</em></p>
-  <p><strong>Geliştirici ve Yayıncı: <a href="https://vellium.dev">Vellium</a></strong> &bull; <strong>Canlı Web Uygulaması: <a href="https://optical-form-reader.vercel.app">optical-form-reader.vercel.app</a></strong></p>
+  <p><strong>Geliştirici ve Yayıncı: <a href="https://vellium.dev">Vellium</a></strong> &bull; <strong>Canlı Web Uygulaması: <a href="https://optikformokuyucu.vercel.app">optikformokuyucu.vercel.app</a></strong></p>
 </div>
 
 <br>
