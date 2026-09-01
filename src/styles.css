@@ -1716,6 +1716,29 @@ td strong { color: var(--text); }
   background: #000;
 }
 
+.camera-device-select {
+  height: 38px;
+  border-radius: 10px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #f8fafc;
+  cursor: pointer;
+  outline: none;
+}
+
+.camera-device-select:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.camera-device-select option {
+  background: #0f172a;
+  color: #fff;
+}
+
 .camera-loading-state,
 .camera-error-state {
   position: absolute;
@@ -1729,20 +1752,89 @@ td strong { color: var(--text); }
   gap: 12px;
   background: #090d16;
   z-index: 30;
+  overflow-y: auto;
+}
+
+.error-icon-box {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  display: grid;
+  place-items: center;
+  margin-bottom: 4px;
 }
 
 .camera-error-state h3 {
-  font-size: 18px;
+  font-size: 20px;
   margin: 0;
-  color: #ef4444;
+  color: #f8fafc;
 }
 
-.camera-error-state p {
+.error-description {
   color: #94a3b8;
-  max-width: 440px;
-  font-size: 14px;
+  max-width: 520px;
+  font-size: 13.5px;
   line-height: 1.5;
   margin: 0;
+}
+
+.permission-guide-card {
+  width: 100%;
+  max-width: 540px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 16px 18px;
+  text-align: left;
+  margin-top: 4px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.permission-guide-card h4 {
+  font-size: 13.5px;
+  font-weight: 750;
+  color: #38bdf8;
+  margin: 0 0 10px 0;
+}
+
+.permission-steps-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.permission-steps-list strong {
+  color: #f8fafc;
+}
+
+.permission-subtext {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.permission-subtext svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #38bdf8;
+}
+
+.retry-camera-btn {
+  margin-top: 8px;
+  gap: 8px;
 }
 
 .camera-shutter-flash {

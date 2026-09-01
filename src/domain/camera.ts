@@ -5,6 +5,11 @@ export interface CameraStreamOptions {
   deviceId?: string;
 }
 
+export interface CameraDeviceInfo {
+  deviceId: string;
+  label: string;
+}
+
 export interface CameraController {
   stream: MediaStream;
   videoTrack: MediaStreamTrack;
@@ -23,20 +28,37 @@ export function isCameraSupported(): boolean {
   );
 }
 
+export async function listCameraDevices(): Promise<CameraDeviceInfo[]> {
+  if (!isCameraSupported() || typeof navigator.mediaDevices.enumerateDevices !== 'function') {
+    return [];
+  }
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices
+      .filter((d) => d.kind === 'videoinput')
+      .map((d, index) => ({
+        deviceId: d.deviceId,
+        label: d.label || `Kamera ${index + 1} (${d.deviceId ? d.deviceId.slice(0, 5) : 'Varsayılan'})`,
+      }));
+  } catch {
+    return [];
+  }
+}
+
 export function getCameraErrorMessage(error: unknown): string {
   if (error instanceof DOMException) {
     switch (error.name) {
       case 'NotAllowedError':
       case 'PermissionDeniedError':
-        return 'Kamera erişim izni reddedildi. Tarayıcı adres çubuğundaki kilit simgesine tıklayarak kamera iznini onaylayın.';
+        return 'Kamera erişim izni reddedildi. Tarayıcı adres çubuğundaki kilit (Site Bilgileri) simgesine tıklayarak Kamera iznini "İzin Ver" olarak değiştirin ve Tekrar Dene butonuna basın.';
       case 'NotFoundError':
       case 'DevicesNotFoundError':
-        return 'Cihazınızda kullanılabilir bir kamera bulunamadı.';
+        return 'Cihazınızda takılı veya kullanılabilir bir kamera (Webcam) bulunamadı. Lütfen kamera bağlantınızı kontrol edin.';
       case 'NotReadableError':
       case 'TrackStartError':
-        return 'Kamera başka bir uygulama tarafından kullanılıyor olabilir. Lütfen diğer kamera uygulamalarını kapatıp tekrar deneyin.';
+        return 'Kamera şu anda başka bir uygulama (Zoom, Teams, Discord vb.) tarafından kullanılıyor. Lütfen diğer uygulamaları kapatıp tekrar deneyin.';
       case 'OverconstrainedError':
-        return 'İstenen kamera çözünürlüğü veya özellikleri cihazınız tarafından desteklenmiyor.';
+        return 'İstenen kamera çözünürlüğü cihazınız tarafından desteklenmiyor. Sistem otomatik olarak standart çözünürlüğe geçmeyi deneyecektir.';
       case 'SecurityError':
         return 'Kamera yalnızca güvenli HTTPS bağlantısı veya localhost üzerinde çalışır.';
       default:
@@ -58,21 +80,62 @@ export async function requestCameraStream(options: CameraStreamOptions = {}): Pr
     deviceId,
   } = options;
 
-  const constraints: MediaStreamConstraints = {
-    audio: false,
-    video: {
-      deviceId: deviceId ? { exact: deviceId } : undefined,
-      facingMode: deviceId ? undefined : { ideal: facingMode },
-      width: { ideal: idealWidth, min: 640 },
-      height: { ideal: idealHeight, min: 480 },
+  // Bilgisayar ve telefonlarda farklı çözünürlük/donanım uyumluluğu için aşamalı kısıtlama listesi
+  const candidateConstraints: MediaStreamConstraints[] = [
+    // 1. Aşama: İstenen ideal çözünürlük ve yön
+    {
+      audio: false,
+      video: deviceId
+        ? { deviceId: { exact: deviceId } }
+        : {
+            facingMode: { ideal: facingMode },
+            width: { ideal: idealWidth },
+            height: { ideal: idealHeight },
+          },
     },
-  };
+    // 2. Aşama: Standart HD (1280x720) genel uyumluluk (Webcam'ler için)
+    {
+      audio: false,
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+    },
+    // 3. Aşama: Temel fallback (Her türlü kamera donanımını açar)
+    {
+      audio: false,
+      video: true,
+    },
+  ];
 
-  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  let stream: MediaStream | null = null;
+  let lastError: unknown = null;
+
+  for (const constraints of candidateConstraints) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (stream && stream.getVideoTracks().length > 0) {
+        break;
+      }
+    } catch (err) {
+      lastError = err;
+      // Kullanıcı izni açıkça reddettiyse (NotAllowedError), gereksiz yere döngüyü sürdürme, hemen hata fırlat
+      if (
+        err instanceof DOMException &&
+        (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')
+      ) {
+        throw err;
+      }
+    }
+  }
+
+  if (!stream) {
+    throw lastError || new Error('Kamera video akışı oluşturulamadı.');
+  }
+
   const videoTrack = stream.getVideoTracks()[0];
-
   if (!videoTrack) {
-    throw new Error('Kamera video akışı oluşturulamadı.');
+    throw new Error('Kamera video izi bulunamadı.');
   }
 
   let isTorchOn = false;
@@ -124,7 +187,7 @@ export async function requestCameraStream(options: CameraStreamOptions = {}): Pr
     if (isTorchOn) {
       void setTorch(false);
     }
-    stream.getTracks().forEach((track) => {
+    stream?.getTracks().forEach((track) => {
       try {
         track.stop();
       } catch {

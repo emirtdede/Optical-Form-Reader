@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  Camera, Check, ChevronRight, CircleDot, Flashlight, FlashlightOff, LoaderCircle,
-  RefreshCw, Sparkles, Trash2, Video, VideoOff, X, Zap,
+  Camera, Check, ChevronRight, CircleDot, Flashlight, FlashlightOff, Info,
+  LoaderCircle, RefreshCw, ShieldAlert, Sparkles, Trash2, Video, VideoOff, X, Zap,
 } from 'lucide-react';
-import { getCameraErrorMessage, requestCameraStream, type CameraController } from '../domain/camera';
+import {
+  getCameraErrorMessage, listCameraDevices, requestCameraStream, type CameraController, type CameraDeviceInfo,
+} from '../domain/camera';
 import { playCaptureBeep, triggerHapticFeedback } from '../domain/audio';
-import { LiveFormDetector, type DetectionResult, type Point2D } from '../omr/liveDetector';
+import { LiveFormDetector, type DetectionResult } from '../omr/liveDetector';
 
 export interface CameraScannerModalProps {
   isOpen: boolean;
@@ -23,7 +25,10 @@ interface CapturedItem {
 export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScannerModalProps) {
   const [isInitializing, setIsInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPermissionDenied, setIsPermissionDenied] = useState(false);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
+  const [availableDevices, setAvailableDevices] = useState<CameraDeviceInfo[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(undefined);
   const [hasTorch, setHasTorch] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [isContinuousMode, setIsContinuousMode] = useState(true);
@@ -47,9 +52,10 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
   const lastAnalysisTimeRef = useRef(0);
 
   // Kamerayı başlat
-  const startCamera = useCallback(async (targetFacingMode: 'environment' | 'user') => {
+  const startCamera = useCallback(async (targetFacingMode: 'environment' | 'user', targetDeviceId?: string) => {
     setIsInitializing(true);
     setError(null);
+    setIsPermissionDenied(false);
 
     // Varsa önceki akışı durdur
     if (controllerRef.current) {
@@ -60,6 +66,7 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
     try {
       const controller = await requestCameraStream({
         facingMode: targetFacingMode,
+        deviceId: targetDeviceId,
         idealWidth: 1920,
         idealHeight: 1080,
       });
@@ -72,9 +79,18 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
         videoRef.current.srcObject = controller.stream;
         await videoRef.current.play();
       }
+
+      // Kullanılabilir kameraları listele
+      const devices = await listCameraDevices();
+      setAvailableDevices(devices);
+
       setIsInitializing(false);
     } catch (camError) {
-      setError(getCameraErrorMessage(camError));
+      const msg = getCameraErrorMessage(camError);
+      setError(msg);
+      if (camError instanceof DOMException && (camError.name === 'NotAllowedError' || camError.name === 'PermissionDeniedError')) {
+        setIsPermissionDenied(true);
+      }
       setIsInitializing(false);
     }
   }, []);
@@ -84,7 +100,7 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
     if (!isOpen) return;
 
     detectorRef.current = new LiveFormDetector({ stabilityDurationMs: 450 });
-    void startCamera(facingMode);
+    void startCamera(facingMode, selectedDeviceId);
 
     return () => {
       if (controllerRef.current) {
@@ -95,7 +111,7 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isOpen, startCamera, facingMode]);
+  }, [isOpen, startCamera, facingMode, selectedDeviceId]);
 
   // Manuel veya otomatik fotoğraf çekme fonksiyonu
   const captureFrame = useCallback(async (isAuto = false) => {
@@ -122,7 +138,7 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
       setCapturedItems((prev) => [newItem, ...prev]);
 
       if (isAuto && isContinuousMode) {
-        // Seri modda sonraki form için 1.2 saniye bekleme/kağıt değiştirme periyodu
+        // Seri modda sonraki form için 1.2 saniye bekleme periyodu
         isCooldownRef.current = true;
         detectorRef.current?.reset();
         setDetectorResult({
@@ -150,7 +166,6 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
 
     function loop(now: number) {
       if (!isCooldownRef.current && videoRef.current && detectorRef.current && videoRef.current.readyState >= 2) {
-        // 120ms throttled kare analizi
         if (now - lastAnalysisTimeRef.current >= 120) {
           lastAnalysisTimeRef.current = now;
           const result = detectorRef.current.analyzeFrame(videoRef.current, now);
@@ -186,6 +201,7 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
   function handleFlipCamera() {
     const nextFacing = facingMode === 'environment' ? 'user' : 'environment';
     setFacingMode(nextFacing);
+    setSelectedDeviceId(undefined);
   }
 
   // Çekilen bir formu listeden sil
@@ -201,7 +217,6 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
   function handleFinish() {
     if (capturedItems.length > 0) {
       onAddFiles(capturedItems.map((c) => c.file));
-      // Object URL'leri temizle
       capturedItems.forEach((c) => URL.revokeObjectURL(c.previewUrl));
       setCapturedItems([]);
     }
@@ -225,6 +240,21 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
           </div>
 
           <div className="camera-header-actions">
+            {availableDevices.length > 1 && (
+              <select
+                className="camera-device-select"
+                value={selectedDeviceId ?? ''}
+                onChange={(e) => setSelectedDeviceId(e.target.value || undefined)}
+                aria-label="Kamera seçimi"
+              >
+                {availableDevices.map((device, idx) => (
+                  <option key={device.deviceId} value={device.deviceId}>
+                    {device.label || `Kamera ${idx + 1}`}
+                  </option>
+                ))}
+              </select>
+            )}
+
             {hasTorch && (
               <button
                 type="button"
@@ -241,7 +271,7 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
               type="button"
               className="camera-icon-btn"
               onClick={handleFlipCamera}
-              title="Kamerayı Değiştir (Ön/Arka)"
+              title="Kamerayı Değiştir (Ön/Arka/Webcam)"
               aria-label="Kamera yönü değiştir"
             >
               <RefreshCw size={18} />
@@ -254,7 +284,7 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
               title="Seri Tarama: Form sabitlendiğinde otomatik çeker"
             >
               <Zap size={14} />
-              <span>{isContinuousMode ? 'Seri Otomatik' : 'Manuel Deklanşör'}</span>
+              <span>{isContinuousMode ? 'Seri Otomatik' : 'Manuel'}</span>
             </button>
 
             <button
@@ -279,11 +309,41 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
 
           {error && (
             <div className="camera-error-state">
-              <VideoOff size={44} />
-              <h3>Kamera Açılamadı</h3>
-              <p>{error}</p>
-              <button type="button" className="button button-primary" onClick={() => void startCamera(facingMode)}>
-                Tekrar Dene
+              <div className="error-icon-box">
+                {isPermissionDenied ? <ShieldAlert size={40} className="text-warning" /> : <VideoOff size={40} className="text-danger" />}
+              </div>
+              <h3>{isPermissionDenied ? 'Kamera Erişim İzni Gerekli' : 'Kamera Açılamadı'}</h3>
+              <p className="error-description">{error}</p>
+
+              {isPermissionDenied ? (
+                <div className="permission-guide-card">
+                  <h4>💡 Bilgisayar ve Telefonlarda Kamera İzni Nasıl Verilir?</h4>
+                  <ol className="permission-steps-list">
+                    <li>
+                      <strong>1. Adım:</strong> Tarayıcınızın adres çubuğundaki (URL'nin solundaki) <strong>Kilit 🔒 / Site Ayarları</strong> simgesine tıklayın.
+                    </li>
+                    <li>
+                      <strong>2. Adım:</strong> Açılan menüde <strong>Kamera</strong> seçeneğini <strong>"İzin Ver (Allow)"</strong> konumuna getirin.
+                    </li>
+                    <li>
+                      <strong>3. Adım:</strong> Aşağıdaki <strong>"Tekrar Dene"</strong> butonuna tıklayın.
+                    </li>
+                  </ol>
+                  <div className="permission-subtext">
+                    <Info size={14} />
+                    <span>
+                      <strong>Windows kullanıcıları:</strong> Eğer kilit simgesinden izin verdiğiniz halde açılmıyorsa; <em>Windows Ayarları → Gizlilik ve Güvenlik → Kamera</em> bölümünden tarayıcınıza kamera erişim izninin açık olduğunu doğrulayın.
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                className="button button-primary button-large retry-camera-btn"
+                onClick={() => void startCamera(facingMode, selectedDeviceId)}
+              >
+                <RefreshCw size={17} /> Tekrar Dene
               </button>
             </div>
           )}

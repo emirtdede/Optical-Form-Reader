@@ -12,10 +12,10 @@ describe('camera hardware and error handling', () => {
     expect(getCameraErrorMessage(notAllowed)).toContain('Kamera erişim izni reddedildi');
 
     const notFound = new DOMException('Requested device not found', 'NotFoundError');
-    expect(getCameraErrorMessage(notFound)).toContain('kullanılabilir bir kamera bulunamadı');
+    expect(getCameraErrorMessage(notFound)).toContain('kullanılabilir bir kamera (Webcam) bulunamadı');
 
     const notReadable = new DOMException('Could not start video source', 'NotReadableError');
-    expect(getCameraErrorMessage(notReadable)).toContain('başka bir uygulama tarafından kullanılıyor');
+    expect(getCameraErrorMessage(notReadable)).toContain('başka bir uygulama');
 
     const security = new DOMException('Insecure context', 'SecurityError');
     expect(getCameraErrorMessage(security)).toContain('güvenli HTTPS bağlantısı');
