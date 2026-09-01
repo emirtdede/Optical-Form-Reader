@@ -2,27 +2,14 @@
 
 **Ürün:** Optik Form Okuyucu  
 **Geliştirici & Yayıncı:** Vellium  
-**Sürüm:** v2.1.0+ (Gelecek Sürümler Planı)  
+**Kapsam:** Gelecek Sürümler İçin Planlanan Hedefler  
 **Tarih:** Eylül 2026  
 
 ---
 
-## 📌 1. Tamamlanan ve Mevcut Sürümde Yer Alan Özellikler
+## 🚀 Planlanan 3 Ana Gelecek Özelliği (Öncelik Sırasıyla)
 
-Aşağıdaki özellikler ilk hedefler arasında yer almış ve **v2.1.0 sürümü itibarıyla sisteme %100 entegre edilmiştir:**
-
-- ✅ **4 Parçalı Dinamik Ders / Bölüm Yapısı:** 100 soruluk formun 4 eşit parçaya (1–25, 26–50, 51–75, 76–100) ayrılması, kullanıcı tarafından ders adlarının (*Türkçe, Matematik, Fen, Sosyal vb.*) özelleştirilebilmesi ve soru aralıklarının esnekçe değiştirilebilmesi.
-- ✅ **Ayrı Ayrı Net ve Puan Hesaplaması:** Her ders/bölüm için bağımsız Doğru, Yanlış, Boş ve Net puanı dökümü.
-- ✅ **Soru Katsayı Matrisi:** Hem bölümlere genel çarpan (örn. 1.5x) hem de 100 sorunun her birine tek tek özel puan ağırlığı atama desteği.
-- ✅ **YÖK Uyumlu 3'lü Notlandırma Baremi:** 100 üzerinden başarı notu, 4.00 üzerinden üniversite GPA notu ve resmi YÖK harf notları (`AA, BA, BB, CB, CC, DC, DD, FD, FF`).
-- ✅ **Çan Eğrisi (Bağıl Değerlendirme & T-Skor):** Sınıf aritmetik ortalaması ($\bar{X}$), standart sapma ($S$) ve $T = 10Z + 50$ formülüyle bağıl harf notu hesaplama motoru.
-- ✅ **Zengin Raporlama & Karne Çıktısı:** Sütunlu Excel (XLSX), CSV, JSON, ZIP ve tek sayfalık resmi PDF öğrenci karneleri.
-
----
-
-## 🚀 2. Gelecek Sürümler İçin Planlanan 3 Ana Özellik (Öncelik Sırasıyla)
-
-Sistemi dünya standartlarında 100 tam puanlık bir çözüme ulaştıracak öncelikli geliştirmeler:
+Sistemi dünya standartlarında bir ürüne ulaştıracak ve kurumsal sınav uyumluluğunu en üst düzeye çıkaracak gelecek hedefleri:
 
 ```mermaid
 flowchart LR
@@ -36,9 +23,10 @@ flowchart LR
 ### 🟢 Aşama 1: Çoklu Kitapçık Desteği (A / B / C / D Kitapçıkları)
 * **Zorluk Seviyesi:** **Kolay (Tahmini Efor: 1 – 2 Saat)**
 * **Öncelik:** **Yüksek (P0)**
+* **Planlanan Sürüm:** **v2.2.0**
 
 #### Hedef & Kapsam:
-Sınavlarda kopya önleme amacıyla kullanılan farklı soru sıralamasına sahip kitapçık türlerinin tek oturumda okunabilmesi.
+Sınavlarda kopya önleme amacıyla kullanılan farklı soru sıralamasına sahip kitapçık türlerinin tek oturumda otomatik okunabilmesi.
 
 #### Teknik Uygulama Planı:
 1. **OMR Kitapçık Algılama:** Formun üst bilgi alanındaki `[A] [B] [C] [D]` baloncuklarının `omr.worker.ts` tarafından taranması.
@@ -50,6 +38,7 @@ Sınavlarda kopya önleme amacıyla kullanılan farklı soru sıralamasına sahi
 ### 🟡 Aşama 2: Kamera ile Canlı / Anlık Tarama (Webcam & Telefon Kamerası)
 * **Zorluk Seviyesi:** **Orta (Tahmini Efor: 3 – 5 Saat)**
 * **Öncelik:** **Orta (P1)**
+* **Planlanan Sürüm:** **v2.3.0**
 
 #### Hedef & Kapsam:
 Öğretmenlerin kağıtları tek tek tarayıcıdan geçirmek veya fotoğraf yüklemek yerine telefon/bilgisayar kamerasını kağıda tutarak 1 saniyede anlık okutabilmesi.
@@ -64,6 +53,7 @@ Sınavlarda kopya önleme amacıyla kullanılan farklı soru sıralamasına sahi
 ### 🔴 Aşama 3: Özelleştirilebilir Şablon Sihirbazı & Şablon Mağazası
 * **Zorluk Seviyesi:** **Kapsamlı (Tahmini Efor: 1 – 2 Gün)**
 * **Öncelik:** **Gelecek Sürüm (P2)**
+* **Planlanan Sürüm:** **v3.0.0**
 
 #### Hedef & Kapsam:
 Sabit 100 soru haricinde kullanıcıların 15, 20, 30, 40 veya 50 soruluk mini sınavlar, quizler veya denemeler için kendi özel optik formlarını oluşturup indirebilmesi ve indireceği hazır şablonları okutabilmesi.
@@ -76,14 +66,10 @@ Sabit 100 soru haricinde kullanıcıların 15, 20, 30, 40 veya 50 soruluk mini s
 
 ---
 
-## 📊 Yol Haritası İlerleme Tablosu
+## 📊 Gelecek Sürümler Yol Haritası Tablosu
 
-| Özellik | Zorluk | Durum | Planlanan Sürüm |
+| Hedeflenen Özellik | Zorluk | Öncelik | Hedef Sürüm |
 | :--- | :---: | :---: | :---: |
-| **4 Bölümlü Ders Yapılandırması** | Kolay | 🟢 **Tamamlandı** | v2.1.0 |
-| **Soru Katsayı ve Puanlama Ağırlıkları** | Kolay | 🟢 **Tamamlandı** | v2.1.0 |
-| **YÖK 3'lü Notlandırma (100 / GPA / Harf)** | Orta | 🟢 **Tamamlandı** | v2.1.0 |
-| **Çan Eğrisi (T-Skor BDS) Motoru** | Orta | 🟢 **Tamamlandı** | v2.1.0 |
-| **Çoklu Kitapçık Desteği (A/B/C/D)** | Kolay | 🔵 **Sıradaki (Aşama 1)** | v2.2.0 |
-| **Kamera ile Canlı Vizör & Auto-Capture** | Orta | 🔵 **Planlandı (Aşama 2)** | v2.3.0 |
-| **Şablon Sihirbazı & Şablon Mağazası** | Kapsamlı | 🔵 **Planlandı (Aşama 3)** | v3.0.0 |
+| **Çoklu Kitapçık Desteği (A/B/C/D)** | Kolay | 🔴 Yüksek (P0) | **v2.2.0** |
+| **Kamera ile Canlı Vizör & Auto-Capture** | Orta | 🟡 Orta (P1) | **v2.3.0** |
+| **Şablon Sihirbazı & Şablon Mağazası** | Kapsamlı | 🔵 Gelecek (P2) | **v3.0.0** |
