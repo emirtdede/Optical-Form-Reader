@@ -50,4 +50,33 @@ describe('scoring', () => {
     expect(recalculated.answers[0].status).toBe('ambiguous');
     expect(recalculated.score.ambiguous).toBe(1);
   });
+
+  it('A ve B kitapçıklarına göre öğrenci cevaplarını doğru anahtarla eşler', () => {
+    const keyA = Array.from({ length: 100 }, () => 'A' as const);
+    const keyB = Array.from({ length: 100 }, () => 'B' as const);
+
+    const studentAnswers = Array.from({ length: 100 }, () => 'B' as const);
+    
+    // Öğrenci B kodlamışsa B anahtarıyla 100 doğru almalıdır
+    const readB: FormReadResult = {
+      ...readResult(studentAnswers),
+      booklet: 'B',
+      bookletConfidence: 0.98,
+    };
+    const resultB = compareWithAnswerKey({ A: keyA, B: keyB }, readB);
+    expect(resultB.booklet).toBe('B');
+    expect(resultB.score.correct).toBe(100);
+    expect(resultB.score.letterGrade).toBe('AA');
+
+    // Öğrenci A kodlamışsa A anahtarıyla (cevaplar B olduğu için) 100 yanlış almalıdır
+    const readA: FormReadResult = {
+      ...readResult(studentAnswers),
+      booklet: 'A',
+      bookletConfidence: 0.95,
+    };
+    const resultA = compareWithAnswerKey({ A: keyA, B: keyB }, readA);
+    expect(resultA.booklet).toBe('A');
+    expect(resultA.score.wrong).toBe(100);
+    expect(resultA.score.letterGrade).toBe('FF');
+  });
 });

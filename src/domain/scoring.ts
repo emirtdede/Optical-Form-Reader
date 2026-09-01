@@ -1,6 +1,7 @@
 import type {
   AnswerChoice,
   AnswerStatus,
+  BookletType,
   ExamSection,
   FormReadResult,
   QuestionResult,
@@ -19,12 +20,34 @@ export function isCompleteAnswerKey(read: FormReadResult): read is FormReadResul
 }
 
 export function compareWithAnswerKey(
-  answerKey: AnswerChoice[],
+  answerKey: AnswerChoice[] | Partial<Record<BookletType, AnswerChoice[]>>,
   read: FormReadResult,
   sections: ExamSection[] = getDefaultSections(),
   questionWeights?: number[],
-): { answers: QuestionResult[]; score: Score } {
-  if (answerKey.length !== QUESTION_COUNT || read.answers.length !== QUESTION_COUNT) {
+  forcedBooklet?: BookletType,
+): { answers: QuestionResult[]; score: Score; booklet: BookletType; bookletNeedsReview: boolean } {
+  const isMap = !Array.isArray(answerKey);
+  const detectedBooklet: BookletType = forcedBooklet ?? read.booklet ?? 'A';
+  
+  let activeKey: AnswerChoice[];
+  let bookletNeedsReview = !read.booklet || (read.bookletConfidence !== undefined && read.bookletConfidence !== null && read.bookletConfidence < 0.6);
+
+  if (isMap) {
+    const candidateKey = answerKey[detectedBooklet];
+    if (candidateKey && candidateKey.length === QUESTION_COUNT) {
+      activeKey = candidateKey;
+    } else {
+      activeKey = (answerKey.A ?? Object.values(answerKey).find((k) => k && k.length === QUESTION_COUNT)) as AnswerChoice[];
+      if (!activeKey) {
+        throw new Error('Geçerli bir cevap anahtarı bulunamadı.');
+      }
+      bookletNeedsReview = true;
+    }
+  } else {
+    activeKey = answerKey;
+  }
+
+  if (activeKey.length !== QUESTION_COUNT || read.answers.length !== QUESTION_COUNT) {
     throw new Error('Form ve cevap anahtarı 100 soru içermelidir.');
   }
 
@@ -33,7 +56,7 @@ export function compareWithAnswerKey(
   let weightedCorrect = 0;
   let weightedWrong = 0;
 
-  const answers = answerKey.map<QuestionResult>((key, index) => {
+  const answers = activeKey.map<QuestionResult>((key, index) => {
     const marked = read.answers[index] ?? null;
     let status: AnswerStatus;
 
@@ -81,21 +104,23 @@ export function compareWithAnswerKey(
     sections: sectionScores,
   };
 
-  return { answers, score };
+  return { answers, score, booklet: detectedBooklet, bookletNeedsReview };
 }
 
 export function recalculateStudentAnswers(
   answers: QuestionResult[],
   sections: ExamSection[] = getDefaultSections(),
+  newKey?: AnswerChoice[],
 ): { answers: QuestionResult[]; score: Score } {
   let totalMaxWeight = 0;
   let weightedCorrect = 0;
   let weightedWrong = 0;
 
-  const normalized = answers.map((answer) => {
+  const normalized = answers.map((answer, index) => {
+    const key = newKey?.[index] ?? answer.key;
     const status: AnswerStatus = answer.marked === null
       ? answer.status === 'ambiguous' ? 'ambiguous' : 'blank'
-      : answer.marked === answer.key
+      : answer.marked === key
         ? 'correct'
         : 'wrong';
 
@@ -104,7 +129,7 @@ export function recalculateStudentAnswers(
     if (status === 'correct') weightedCorrect += weight;
     else if (status === 'wrong') weightedWrong += weight;
 
-    return { ...answer, status, confidence: 1, weight };
+    return { ...answer, key, status, confidence: 1, weight };
   });
 
   const totals = normalized.reduce(

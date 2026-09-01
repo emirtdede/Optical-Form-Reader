@@ -14,7 +14,9 @@ import {
   exportSummaryCsv, exportXlsx, exportZip, printSession,
 } from '../export/exporters';
 import { listProcessingJobs } from '../storage/database';
-import { CHOICES, type AnswerChoice, type ExamSession, type ProcessingJob, type QuestionResult, type StudentResult } from '../types';
+import {
+  BOOKLETS, CHOICES, type AnswerChoice, type BookletType, type ExamSession, type ProcessingJob, type QuestionResult, type StudentResult,
+} from '../types';
 
 type ResultsTab = 'students' | 'questions' | 'jobs';
 
@@ -29,6 +31,7 @@ export function ResultsPage() {
   const session = sessions.find((candidate) => candidate.id === sessionId) ?? sessions[0];
   const [tab, setTab] = useState<ResultsTab>('students');
   const [search, setSearch] = useState('');
+  const [bookletFilter, setBookletFilter] = useState<'all' | BookletType>('all');
   const [useRelativeGrading, setUseRelativeGrading] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [busyExport, setBusyExport] = useState<string | null>(null);
@@ -40,6 +43,7 @@ export function ResultsPage() {
   useEffect(() => {
     setSelectedStudentId(null);
     setSearch('');
+    setBookletFilter('all');
     setTab('students');
     setUseRelativeGrading(Boolean(session?.useRelativeGrading));
     setVisibleStudentCount(250);
@@ -56,7 +60,7 @@ export function ResultsPage() {
 
   useEffect(() => {
     setVisibleStudentCount(250);
-  }, [search]);
+  }, [search, bookletFilter]);
 
   // Çan Eğrisi (T-Skor Bağıl Değerlendirme)
   const { gradedResults, relativeReport } = useMemo(() => {
@@ -82,9 +86,12 @@ export function ResultsPage() {
 
   const filteredStudents = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('tr-TR');
-    if (!gradedResults.length || !query) return gradedResults;
-    return gradedResults.filter((result) => result.studentNumber.toLocaleLowerCase('tr-TR').includes(query) || result.sourceName.toLocaleLowerCase('tr-TR').includes(query));
-  }, [search, gradedResults]);
+    return gradedResults.filter((result) => {
+      if (bookletFilter !== 'all' && (result.booklet ?? 'A') !== bookletFilter) return false;
+      if (!query) return true;
+      return result.studentNumber.toLocaleLowerCase('tr-TR').includes(query) || result.sourceName.toLocaleLowerCase('tr-TR').includes(query);
+    });
+  }, [search, bookletFilter, gradedResults]);
 
   const selectedStudent = gradedResults.find((result) => result.id === selectedStudentId) ?? null;
   const partIndexes = useMemo(
@@ -232,6 +239,21 @@ export function ResultsPage() {
           <section className="data-panel">
             <div className="panel-tools">
               <div className="search-field"><Search size={17} /><input aria-label="Öğrenci ara" placeholder="Öğrenci no veya dosya ara" value={search} onChange={(event) => setSearch(event.target.value)} /></div>
+              <div className="booklet-filter-group" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Kitapçık:</span>
+                <select
+                  value={bookletFilter}
+                  onChange={(e) => setBookletFilter(e.target.value as any)}
+                  className="booklet-filter-select"
+                  aria-label="Kitapçık filtresi"
+                >
+                  <option value="all">Tüm Kitapçıklar</option>
+                  <option value="A">A Kitapçığı</option>
+                  <option value="B">B Kitapçığı</option>
+                  <option value="C">C Kitapçığı</option>
+                  <option value="D">D Kitapçığı</option>
+                </select>
+              </div>
               <span>{filteredStudents.length} kayıt {useRelativeGrading ? '(Çan Eğrisi Aktif)' : ''}</span>
             </div>
             <div className="table-scroll">
@@ -239,6 +261,7 @@ export function ResultsPage() {
                 <thead>
                   <tr>
                     <th>Öğrenci no</th>
+                    <th>Kitapçık</th>
                     <th>Dosya</th>
                     <th>Doğru</th>
                     <th>Yanlış</th>
@@ -253,8 +276,12 @@ export function ResultsPage() {
                 </thead>
                 <tbody>
                   {filteredStudents.slice(0, visibleStudentCount).map((student) => (
-                    <tr key={student.id} className={student.studentNumberNeedsReview ? 'needs-review' : ''}>
+                    <tr key={student.id} className={student.studentNumberNeedsReview || student.bookletNeedsReview ? 'needs-review' : ''}>
                       <td><strong>{student.studentNumber}</strong>{student.studentNumberNeedsReview && <span className="review-badge"><AlertTriangle size={13} /> Kontrol</span>}</td>
+                      <td>
+                        <span className={`booklet-chip booklet-${student.booklet ?? 'A'}`}>{student.booklet ?? 'A'}</span>
+                        {student.bookletNeedsReview && <span className="review-badge" title="Kitapçık kontrolü gerekli"><AlertTriangle size={12} /></span>}
+                      </td>
                       <td>{student.sourceName}</td>
                       <td className="text-success">{student.score.correct}</td>
                       <td className="text-danger">{student.score.wrong}</td>
@@ -330,6 +357,7 @@ function RankingCard({ title, items, tone }: { title: string; items: Array<{ que
 
 function StudentReview({ session, student, onClose, onSave, onPdf }: { session: ExamSession; student: StudentResult; onClose: () => void; onSave: (student: StudentResult) => Promise<void>; onPdf: () => void }) {
   const [studentNumber, setStudentNumber] = useState(student.studentNumber);
+  const [booklet, setBooklet] = useState<BookletType>(student.booklet ?? 'A');
   const [answers, setAnswers] = useState<QuestionResult[]>(student.answers);
   const [filter, setFilter] = useState<'all' | 'wrong' | 'blank' | 'ambiguous'>('all');
   const [error, setError] = useState<string | null>(null);
@@ -340,6 +368,23 @@ function StudentReview({ session, student, onClose, onSave, onPdf }: { session: 
     document.addEventListener('keydown', closeOnEscape);
     return () => document.removeEventListener('keydown', closeOnEscape);
   }, [onClose]);
+
+  function handleBookletChange(nextBooklet: BookletType) {
+    setBooklet(nextBooklet);
+    const targetKey = session.bookletKeys?.[nextBooklet] ?? (nextBooklet === 'A' ? session.answerKey : null);
+    if (targetKey && targetKey.length === 100) {
+      setAnswers((current) => current.map((ans, idx) => {
+        const key = targetKey[idx];
+        const marked = ans.marked;
+        let status: QuestionResult['status'];
+        if (ans.status === 'ambiguous') status = 'ambiguous';
+        else if (marked === null) status = 'blank';
+        else if (marked === key) status = 'correct';
+        else status = 'wrong';
+        return { ...ans, key, status };
+      }));
+    }
+  }
 
   const recalculated = useMemo(() => recalculateStudentAnswers(answers, session.sections), [answers, session.sections]);
   const visibleAnswers = filter === 'all' ? answers : answers.filter((answer) => answer.status === filter);
@@ -365,6 +410,8 @@ function StudentReview({ session, student, onClose, onSave, onPdf }: { session: 
       await onSave({
         ...student,
         studentNumber: normalizedNumber,
+        booklet,
+        bookletNeedsReview: false,
         studentNumberSource: 'manual',
         studentNumberNeedsReview: false,
         answers: recalculated.answers,
@@ -443,10 +490,28 @@ function StudentReview({ session, student, onClose, onSave, onPdf }: { session: 
           </div>
         )}
 
-        <div className="student-number-edit">
-          <label htmlFor="student-number">Öğrenci numarası</label>
-          <input id="student-number" value={studentNumber} maxLength={24} onChange={(event) => setStudentNumber(event.target.value)} />
-          <small>Kaynak: {student.studentNumberSource === 'form' ? 'form baloncukları' : student.studentNumberSource === 'filename' ? 'dosya adı' : student.studentNumberSource === 'manual' ? 'manuel' : 'geçici numara'}</small>
+        <div className="student-edit-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 130px', gap: 12, marginBottom: 16 }}>
+          <div className="student-number-edit" style={{ margin: 0 }}>
+            <label htmlFor="student-number">Öğrenci numarası</label>
+            <input id="student-number" value={studentNumber} maxLength={24} onChange={(event) => setStudentNumber(event.target.value)} />
+            <small>Kaynak: {student.studentNumberSource === 'form' ? 'form baloncukları' : student.studentNumberSource === 'filename' ? 'dosya adı' : student.studentNumberSource === 'manual' ? 'manuel' : 'geçici numara'}</small>
+          </div>
+          <div className="booklet-edit" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label htmlFor="student-booklet" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Kitapçık</label>
+            <select
+              id="student-booklet"
+              value={booklet}
+              onChange={(e) => handleBookletChange(e.target.value as BookletType)}
+              style={{ height: 42, borderRadius: 8, padding: '0 10px', background: 'var(--surface-input)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontWeight: 600 }}
+            >
+              {BOOKLETS.map((b) => (
+                <option key={b} value={b}>{b} Kitapçığı</option>
+              ))}
+            </select>
+            <small style={{ color: student.bookletNeedsReview ? 'var(--warning-color, #eab308)' : 'var(--text-muted)' }}>
+              {student.bookletNeedsReview ? 'Kontrol gerekli' : 'Kitapçık türü'}
+            </small>
+          </div>
         </div>
 
         <div className="answer-filters">

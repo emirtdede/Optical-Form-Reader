@@ -66,15 +66,50 @@ describe('E2E Complete User Workflow Audit', () => {
     const exportData = summaryRows({ ...session, results: relativeGraded });
     expect(exportData.length).toBe(6); // 1 header + 5 rows
     const headerRow = exportData[0] as string[];
+    expect(headerRow).toContain('Kitapçık');
     expect(headerRow).toContain('100 Puan');
     expect(headerRow).toContain('4.00 GPA');
     expect(headerRow).toContain('Harf Notu');
     expect(headerRow).toContain('Çan Eğrisi Harfi (T-Skor)');
     expect(headerRow).toContain('Bölüm 1 Net');
   });
+
+  it('Çoklu kitapçık (A ve B) sınav oturumunda öğrencileri doğru anahtarla değerlendirir', () => {
+    const keyA: AnswerChoice[] = Array.from({ length: 100 }, () => 'A');
+    const keyB: AnswerChoice[] = Array.from({ length: 100 }, () => 'B');
+
+    const bookletKeys = { A: keyA, B: keyB };
+
+    // Öğrenci 1: A kitapçığı, tümü A işaretli -> 100 Doğru
+    const student1 = createStudent('STU-A1', keyA, 0, 'A');
+    // Öğrenci 2: B kitapçığı, tümü B işaretli -> 100 Doğru
+    const student2 = createStudent('STU-B1', keyB, 0, 'B');
+
+    expect(student1.booklet).toBe('A');
+    expect(student1.score.correct).toBe(100);
+    expect(student2.booklet).toBe('B');
+    expect(student2.score.correct).toBe(100);
+
+    const session: ExamSession = {
+      id: 'session-multi-booklet',
+      title: 'Çoklu Kitapçık Sınavı',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      algorithmVersion: '3.0.0',
+      questionCount: 100,
+      answerKey: keyA,
+      bookletKeys,
+      activeBooklets: ['A', 'B'],
+      results: [student1, student2],
+    };
+
+    const rows = summaryRows(session);
+    expect(rows[1][1]).toBe('A'); // student 1 booklet column
+    expect(rows[2][1]).toBe('B'); // student 2 booklet column
+  });
 });
 
-function createStudent(id: string, key: AnswerChoice[], wrongCount: number): StudentResult {
+function createStudent(id: string, key: AnswerChoice[], wrongCount: number, booklet: 'A' | 'B' | 'C' | 'D' = 'A'): StudentResult {
   const readAnswers = key.map((correctChoice, idx) => {
     if (idx < wrongCount) {
       const wrongIdx = (CHOICES.indexOf(correctChoice) + 1) % 5;
@@ -91,9 +126,13 @@ function createStudent(id: string, key: AnswerChoice[], wrongCount: number): Stu
       confidences: Array.from({ length: 100 }, () => 0.98),
       studentNumber: `2026${id.replace(/\D/g, '')}`,
       studentNumberConfidence: 0.99,
+      booklet,
+      bookletConfidence: 0.98,
       diagnostics: { averageConfidence: 0.98, contourCount: 100, processingMs: 15 },
     },
     getDefaultSections(),
+    undefined,
+    booklet,
   );
 
   return {
@@ -101,6 +140,8 @@ function createStudent(id: string, key: AnswerChoice[], wrongCount: number): Stu
     studentNumber: `2026${id.replace(/\D/g, '')}`,
     studentNumberSource: 'form',
     studentNumberNeedsReview: false,
+    booklet,
+    bookletNeedsReview: false,
     sourceName: `${id}.png`,
     processedAt: new Date().toISOString(),
     score,

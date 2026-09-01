@@ -18,6 +18,8 @@ function validSession(): ExamSession {
       studentNumber: '12345678901',
       studentNumberSource: 'form',
       studentNumberNeedsReview: false,
+      booklet: 'A',
+      bookletNeedsReview: false,
       sourceName: 'student.png',
       processedAt: '2026-07-21T12:00:00.000Z',
       score: { correct: 100, wrong: 0, blank: 0, ambiguous: 0, net: 100, percentage: 100, score100: 100, gpa4: 4.0, letterGrade: 'AA' },

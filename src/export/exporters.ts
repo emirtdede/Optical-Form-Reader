@@ -53,6 +53,7 @@ export function summaryRows(session: ExamSession): unknown[][] {
 
   const headers = [
     'Öğrenci No',
+    'Kitapçık',
     'Part',
     'Dosya',
     'Doğru',
@@ -87,6 +88,7 @@ export function summaryRows(session: ExamSession): unknown[][] {
 
     return [
       result.studentNumber,
+      result.booklet ?? 'A',
       (result.partIndex ?? 0) + 1,
       result.sourceName,
       result.score.correct,
@@ -237,7 +239,7 @@ export async function exportStudentPdf(session: ExamSession, student: StudentRes
   documentPdf.text(pdfText(`${session.title} - Ogrenci Karnesi: ${student.studentNumber}`), 14, 16);
   documentPdf.setFontSize(9);
   documentPdf.text(
-    pdfText(`Genel Toplam: Dogru ${student.score.correct} | Yanlis ${student.score.wrong} | Bos ${student.score.blank} | Net ${student.score.net} | 100 Puan: %${student.score.score100 ?? student.score.percentage} | GPA: ${student.score.gpa4 ?? '-'} | Harf: ${student.score.letterGrade ?? '-'}`),
+    pdfText(`Kitapcik: ${student.booklet ?? 'A'} | Genel Toplam: Dogru ${student.score.correct} | Yanlis ${student.score.wrong} | Bos ${student.score.blank} | Net ${student.score.net} | 100 Puan: %${student.score.score100 ?? student.score.percentage} | GPA: ${student.score.gpa4 ?? '-'} | Harf: ${student.score.letterGrade ?? '-'}`),
     14,
     23,
   );

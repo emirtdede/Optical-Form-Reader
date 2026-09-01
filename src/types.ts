@@ -1,5 +1,7 @@
 export const CHOICES = ['A', 'B', 'C', 'D', 'E'] as const;
 export type AnswerChoice = (typeof CHOICES)[number];
+export const BOOKLETS = ['A', 'B', 'C', 'D'] as const;
+export type BookletType = (typeof BOOKLETS)[number];
 export type ReadState = 'marked' | 'blank' | 'ambiguous';
 export type AnswerStatus = 'correct' | 'wrong' | 'blank' | 'ambiguous';
 
@@ -15,6 +17,8 @@ export interface FormReadResult {
   confidences: number[];
   studentNumber: string | null;
   studentNumberConfidence: number | null;
+  booklet?: BookletType | null;
+  bookletConfidence?: number | null;
   diagnostics: FormDiagnostics;
 }
 
@@ -73,6 +77,8 @@ export interface StudentResult {
   studentNumber: string;
   studentNumberSource: 'form' | 'filename' | 'manual' | 'generated';
   studentNumberNeedsReview: boolean;
+  booklet: BookletType;
+  bookletNeedsReview?: boolean;
   sourceName: string;
   sourceFingerprint?: string;
   partIndex?: number;
@@ -116,6 +122,8 @@ export interface ExamSession {
   algorithmVersion: string;
   questionCount: 100;
   answerKey: AnswerChoice[];
+  bookletKeys?: Partial<Record<BookletType, AnswerChoice[]>>;
+  activeBooklets?: BookletType[];
   sections?: ExamSection[];
   questionWeights?: number[];
   results: StudentResult[];

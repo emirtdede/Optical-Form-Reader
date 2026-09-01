@@ -283,6 +283,46 @@ function readStudentNumber(cv: Cv, gray: any, rectangles: ContourCandidate[]) {
   }
 }
 
+const BOOKLET_CHOICES = ['A', 'B', 'C', 'D'] as const;
+
+function readBookletType(cv: Cv, gray: any, rectangles: ContourCandidate[]): { value: (typeof BOOKLET_CHOICES)[number] | null; confidence: number | null } {
+  const candidates = rectangles
+    .filter((c) => c.y < IMAGE_HEIGHT * 0.48 && c.width < IMAGE_HEIGHT * 0.4 && c.area > 1200 && c.area < 50000)
+    .sort((a, b) => b.area - a.area);
+
+  for (const candidate of candidates) {
+    const warped = warpContour(cv, gray, candidate.mat, 240, 80);
+    const binary = new cv.Mat();
+    try {
+      cv.threshold(warped, binary, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU);
+      const cellWidth = binary.cols / 4;
+      const ratios = BOOKLET_CHOICES.map((_, idx) => {
+        const xStart = Math.round(idx * cellWidth + cellWidth * 0.15);
+        const xEnd = Math.round((idx + 1) * cellWidth - cellWidth * 0.15);
+        const yStart = Math.round(binary.rows * 0.15);
+        const yEnd = Math.round(binary.rows * 0.85);
+        const area = Math.max(1, (xEnd - xStart) * (yEnd - yStart));
+        return countNonZeroRegion(binary, xStart, xEnd, yStart, yEnd) / area;
+      });
+      const ranked = ratios.map((value, idx) => ({ value, type: BOOKLET_CHOICES[idx] })).sort((a, b) => b.value - a.value);
+      const first = ranked[0];
+      const second = ranked[1];
+
+      if (first.value >= 0.18) {
+        if (second.value >= 0.18 && second.value / Math.max(first.value, Number.EPSILON) >= 0.72) {
+          return { value: null, confidence: 0 };
+        }
+        const confidence = Number((1 - second.value / Math.max(first.value, Number.EPSILON)).toFixed(4));
+        return { value: first.type, confidence };
+      }
+    } finally {
+      safeDelete(warped, binary);
+    }
+  }
+
+  return { value: null, confidence: null };
+}
+
 async function readForm(file: File): Promise<FormReadResult> {
   if (file.size > 20 * 1024 * 1024) throw new OmrError('Dosya boyutu 20 MB sınırını aşıyor.', 'IMAGE_TOO_LARGE');
   const startedAt = performance.now();
@@ -306,10 +346,13 @@ async function readForm(file: File): Promise<FormReadResult> {
     validateAnswerSections(answerSections);
     const answerRead = readAnswerSections(cv, gray, answerSections);
     const studentRead = readStudentNumber(cv, gray, rectangles);
+    const bookletRead = readBookletType(cv, gray, rectangles);
     return {
       ...answerRead,
       studentNumber: studentRead.value,
       studentNumberConfidence: studentRead.confidence,
+      booklet: bookletRead.value,
+      bookletConfidence: bookletRead.confidence,
       diagnostics: {
         averageConfidence: Number((answerRead.confidences.reduce((sum, value) => sum + value, 0) / 100).toFixed(4)),
         contourCount: contours.size(),

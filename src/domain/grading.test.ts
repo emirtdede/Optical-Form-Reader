@@ -76,6 +76,8 @@ describe('grading domain', () => {
       studentNumber: `100${id}`,
       studentNumberSource: 'form',
       studentNumberNeedsReview: false,
+      booklet: 'A',
+      bookletNeedsReview: false,
       sourceName: `student-${id}.png`,
       processedAt: '2026-09-01T10:00:00.000Z',
       answers: [],

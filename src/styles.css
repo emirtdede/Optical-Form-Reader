@@ -1299,6 +1299,105 @@ td strong { color: var(--text); }
   .unified-shimmer-base, .unified-shimmer-shine { font-size: 11.5px; justify-content: center; }
 }
 
+/* --- Çoklu Kitapçık (A/B/C/D) Stilleri --- */
+.booklet-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11.5px;
+  font-weight: 750;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  background: var(--bg-subtle);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.booklet-chip.booklet-A {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent-strong);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.booklet-chip.booklet-B {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+.booklet-chip.booklet-C {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.booklet-chip.booklet-D {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.tab-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--bg-subtle);
+  color: var(--text-soft);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.tab-chip:hover {
+  background: var(--bg-elevated);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.tab-chip.is-active {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.booklet-filter-select {
+  height: 38px;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.18s ease;
+}
+
+.booklet-filter-select:hover {
+  border-color: var(--border-strong);
+}
+
+.mode-toggle-button {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+}
+
+.mode-toggle-button:hover {
+  background: var(--bg-elevated);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

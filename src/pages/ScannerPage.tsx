@@ -24,7 +24,7 @@ import {
 import { getDefaultSections } from '../domain/grading';
 import { SectionConfigPanel } from '../components/SectionConfigPanel';
 import type {
-  AnswerChoice, ExamSection, ExamSession, ProcessingJob, ProcessingSettings, QueueItem, SessionProgress, StudentResult,
+  AnswerChoice, BookletType, ExamSection, ExamSession, ProcessingJob, ProcessingSettings, QueueItem, SessionProgress, StudentResult,
 } from '../types';
 
 type Phase = 'idle' | 'engine' | 'answer-key' | 'students' | 'complete';
@@ -73,6 +73,9 @@ export function ScannerPage() {
   const { sessions, refresh } = useAppData();
   const [title, setTitle] = useState(`Optik Değerlendirme ${new Date().toLocaleDateString('tr-TR')}`);
   const [answerKeyFile, setAnswerKeyFile] = useState<File | null>(null);
+  const [bookletFiles, setBookletFiles] = useState<Record<BookletType, File | null>>({ A: null, B: null, C: null, D: null });
+  const [isMultiBookletMode, setIsMultiBookletMode] = useState(false);
+  const [activeBookletTab, setActiveBookletTab] = useState<BookletType>('A');
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [sections, setSections] = useState<ExamSection[]>(getDefaultSections);
   const [questionWeights, setQuestionWeights] = useState<number[]>(() => Array(100).fill(1));
@@ -205,6 +208,9 @@ export function ScannerPage() {
   function reset() {
     if (processing) return;
     setAnswerKeyFile(null);
+    setBookletFiles({ A: null, B: null, C: null, D: null });
+    setIsMultiBookletMode(false);
+    setActiveBookletTab('A');
     setQueue([]);
     setSections(getDefaultSections());
     setQuestionWeights(Array(100).fill(1));
@@ -235,7 +241,7 @@ export function ScannerPage() {
 
   async function cancelProcessing() {
     cancelledRef.current = true;
-    poolRef.current?.dispose();
+    poolRef.current?.dispose('İşlem kullanıcı tarafından durduruldu.');
     poolRef.current = null;
     const session = sessionRef.current;
     const progress = progressRef.current;
@@ -288,8 +294,9 @@ export function ScannerPage() {
     }
 
     const resume = savedSessionId ? sessions.find((candidate) => candidate.id === savedSessionId) : undefined;
-    if (!resume && !answerKeyFile) {
-      setMessage({ type: 'error', text: 'Cevap anahtarı görüntüsü veya tek sayfalık PDF seçin.' });
+    const effectiveAnswerKeyFile = answerKeyFile ?? bookletFiles.A;
+    if (!resume && !effectiveAnswerKeyFile) {
+      setMessage({ type: 'error', text: 'En az A kitapçığı için cevap anahtarı görüntüsü veya tek sayfalık PDF seçin.' });
       return;
     }
 
@@ -312,23 +319,35 @@ export function ScannerPage() {
 
     try {
       let answerKey: AnswerChoice[];
+      let bookletKeys: Partial<Record<BookletType, AnswerChoice[]>> = {};
+
       if (resume) {
         answerKey = resume.answerKey;
+        bookletKeys = resume.bookletKeys ?? { A: answerKey };
       } else {
         setPhase('answer-key');
-        const preparedKey = await materializeAnswerKey(answerKeyFile!);
-        try {
-          const keyRead = await pool.process(preparedKey.file);
-          if (!isCompleteAnswerKey(keyRead)) {
-            const invalid = keyRead.states
-              .map((state, index) => state !== 'marked' ? index + 1 : null)
-              .filter((value): value is number => value !== null);
-            throw new Error(`Cevap anahtarında ${invalid.length} eksik veya çift işaret var${invalid.length ? `: ${invalid.slice(0, 12).join(', ')}${invalid.length > 12 ? '…' : ''}` : ''}.`);
+        const bookletsToProcess: BookletType[] = isMultiBookletMode
+          ? (['A', 'B', 'C', 'D'] as BookletType[]).filter((b) => (b === 'A' ? effectiveAnswerKeyFile : bookletFiles[b]))
+          : ['A'];
+
+        for (const bk of bookletsToProcess) {
+          const fileToRead = (bk === 'A' ? effectiveAnswerKeyFile : bookletFiles[bk])!;
+          const preparedKey = await materializeAnswerKey(fileToRead);
+          try {
+            const keyRead = await pool.process(preparedKey.file);
+            if (!isCompleteAnswerKey(keyRead)) {
+              const invalid = keyRead.states
+                .map((state, index) => state !== 'marked' ? index + 1 : null)
+                .filter((value): value is number => value !== null);
+              throw new Error(`${bk} Kitapçığı cevap anahtarında ${invalid.length} eksik veya çift işaret var${invalid.length ? `: ${invalid.slice(0, 12).join(', ')}${invalid.length > 12 ? '…' : ''}` : ''}.`);
+            }
+            bookletKeys[bk] = keyRead.answers as AnswerChoice[];
+          } finally {
+            await preparedKey.dispose();
           }
-          answerKey = keyRead.answers as AnswerChoice[];
-        } finally {
-          await preparedKey.dispose();
         }
+
+        answerKey = bookletKeys.A ?? Object.values(bookletKeys)[0]!;
       }
       if (cancelledRef.current) return;
 
@@ -341,6 +360,8 @@ export function ScannerPage() {
         algorithmVersion: ALGORITHM_VERSION,
         questionCount: 100,
         answerKey,
+        bookletKeys,
+        activeBooklets: Object.keys(bookletKeys) as BookletType[],
         sections,
         questionWeights,
         results: [...(resume?.results ?? [])],
@@ -366,17 +387,22 @@ export function ScannerPage() {
       await refresh();
       setPhase('students');
 
+      const seenFingerprints = new Set<string>();
+      const resultByFingerprint = new Map<string, StudentResult>();
+      const resultByStudentNumber = new Map<string, StudentResult>();
+      session.results.forEach((result) => {
+        if (result.sourceFingerprint) resultByFingerprint.set(result.sourceFingerprint, result);
+        resultByStudentNumber.set(result.studentNumber, result);
+      });
       const resultMap = new Map(session.results.map((result) => [result.id, result]));
-      const resultByFingerprint = new Map(session.results.flatMap((result) => result.sourceFingerprint ? [[result.sourceFingerprint, result] as const] : []));
-      const resultByStudentNumber = new Map(session.results.map((result) => [result.studentNumber, result]));
-      const seenFingerprints = new Set(resultByFingerprint.keys());
 
-      for (let partIndex = 0; partIndex < normalizedSettings.partCount && !cancelledRef.current; partIndex += 1) {
+      for (let partIndex = 0; partIndex < normalizedSettings.partCount; partIndex += 1) {
+        if (cancelledRef.current) return;
         const partItems = processingQueue.filter((item) => item.partIndex === partIndex);
         let cursor = 0;
 
-        async function workerLoop() {
-          while (!cancelledRef.current) {
+        async function workerLoop(): Promise<void> {
+          while (cursor < partItems.length && !cancelledRef.current) {
             const index = cursor++;
             if (index >= partItems.length) return;
             const item = partItems[index];
@@ -407,7 +433,7 @@ export function ScannerPage() {
               updateQueueItem(item.id, { status: 'processing', sourceFingerprint: materialized.fingerprint });
               const read = await pool.process(materialized.file);
               if (cancelledRef.current) return;
-              const compared = compareWithAnswerKey(answerKey, read, sections, questionWeights);
+              const compared = compareWithAnswerKey(session!.bookletKeys ?? answerKey, read, sections, questionWeights);
               const filenameNumber = studentNumberFromFilename(item.displayName);
               const formNumber = read.studentNumber;
               const studentNumber = formNumber || filenameNumber || makeGeneratedStudentNumber(item.originalIndex);
@@ -436,6 +462,8 @@ export function ScannerPage() {
                 studentNumber,
                 studentNumberSource: source,
                 studentNumberNeedsReview: source === 'generated' || (source === 'form' && (read.studentNumberConfidence ?? 0) < 0.45),
+                booklet: compared.booklet,
+                bookletNeedsReview: compared.bookletNeedsReview,
                 sourceName: item.displayName,
                 sourceFingerprint: materialized.fingerprint,
                 partIndex,
@@ -539,13 +567,90 @@ export function ScannerPage() {
 
       <section className="scan-setup-grid" aria-label="Tarama dosyaları">
         <article className="setup-card">
-          <div className="setup-card-top"><span className="setup-number">01</span><div><h2>Cevap anahtarı</h2><p>Tam doldurulmuş tek form</p></div></div>
-          {savedSessionId && !answerKeyFile ? (
-            <div className="selected-file"><FileCheck2 /><div><strong>Kayıtlı cevap anahtarı kullanılacak</strong><span>Devam edilen değerlendirmeden güvenle yüklendi</span></div></div>
-          ) : answerKeyFile ? (
-            <div className="selected-file"><FileCheck2 /><div><strong>{answerKeyFile.name}</strong><span>{(answerKeyFile.size / 1024 / 1024).toFixed(2)} MB</span></div><button type="button" disabled={processing} onClick={() => setAnswerKeyFile(null)} aria-label="Cevap anahtarını kaldır"><Trash2 size={18} /></button></div>
+          <div className="setup-card-top">
+            <span className="setup-number">01</span>
+            <div>
+              <h2>Cevap anahtarı</h2>
+              <p>{isMultiBookletMode ? 'Çoklu Kitapçık (A/B/C/D) Modu' : 'Tam doldurulmuş tek form (A Kitapçığı)'}</p>
+            </div>
+            <button
+              type="button"
+              className="button button-ghost button-small mode-toggle-button"
+              disabled={processing}
+              onClick={() => setIsMultiBookletMode(!isMultiBookletMode)}
+              title="Tek veya çoklu kitapçık moduna geçiş yapar"
+            >
+              <Layers3 size={14} /> {isMultiBookletMode ? 'Tek Kitapçık' : 'Çoklu Kitapçık (A/B/C/D)'}
+            </button>
+          </div>
+
+          {isMultiBookletMode ? (
+            <div className="booklet-setup-tabs">
+              <div className="tab-chip-row" style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+                {(['A', 'B', 'C', 'D'] as BookletType[]).map((bk) => {
+                  const hasFile = Boolean(bookletFiles[bk] || (bk === 'A' && answerKeyFile));
+                  return (
+                    <button
+                      key={bk}
+                      type="button"
+                      className={`tab-chip ${activeBookletTab === bk ? 'is-active' : ''}`}
+                      onClick={() => setActiveBookletTab(bk)}
+                    >
+                      {bk} Kitapçığı {hasFile ? '✓' : bk === 'A' ? '(Zorunlu)' : ''}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {savedSessionId && !(bookletFiles[activeBookletTab] || (activeBookletTab === 'A' && answerKeyFile)) ? (
+                <div className="selected-file"><FileCheck2 /><div><strong>Kayıtlı {activeBookletTab} cevap anahtarı</strong><span>Oturumdan yüklendi</span></div></div>
+              ) : (bookletFiles[activeBookletTab] || (activeBookletTab === 'A' && answerKeyFile)) ? (
+                <div className="selected-file">
+                  <FileCheck2 />
+                  <div>
+                    <strong>{activeBookletTab} Kitapçığı: {(bookletFiles[activeBookletTab] ?? answerKeyFile)!.name}</strong>
+                    <span>{(((bookletFiles[activeBookletTab] ?? answerKeyFile)!.size) / 1024 / 1024).toFixed(2)} MB</span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={processing}
+                    onClick={() => {
+                      setBookletFiles((curr) => ({ ...curr, [activeBookletTab]: null }));
+                      if (activeBookletTab === 'A') setAnswerKeyFile(null);
+                    }}
+                    aria-label={`${activeBookletTab} cevap anahtarını kaldır`}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ) : (
+                <label className="file-picker">
+                  <FileImage />
+                  <span>
+                    <strong>{activeBookletTab} Kitapçığı cevap anahtarını seçin</strong>
+                    <small>JPG, PNG, WebP veya tek sayfalık PDF {activeBookletTab === 'A' ? '(Zorunlu)' : '(Opsiyonel)'}</small>
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,.pdf,application/pdf"
+                    disabled={processing}
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] ?? null;
+                      setBookletFiles((curr) => ({ ...curr, [activeBookletTab]: file }));
+                      if (activeBookletTab === 'A') setAnswerKeyFile(file);
+                    }}
+                  />
+                </label>
+              )}
+            </div>
           ) : (
-            <label className="file-picker"><FileImage /><span><strong>Cevap anahtarını seçin</strong><small>JPG, PNG, WebP veya tek sayfalık PDF</small></span><input type="file" accept="image/jpeg,image/png,image/webp,.pdf,application/pdf" disabled={processing} onChange={(event) => setAnswerKeyFile(event.target.files?.[0] ?? null)} /></label>
+            savedSessionId && !answerKeyFile ? (
+              <div className="selected-file"><FileCheck2 /><div><strong>Kayıtlı cevap anahtarı kullanılacak</strong><span>Devam edilen değerlendirmeden güvenle yüklendi</span></div></div>
+            ) : answerKeyFile ? (
+              <div className="selected-file"><FileCheck2 /><div><strong>{answerKeyFile.name}</strong><span>{(answerKeyFile.size / 1024 / 1024).toFixed(2)} MB</span></div><button type="button" disabled={processing} onClick={() => { setAnswerKeyFile(null); setBookletFiles((c) => ({ ...c, A: null })); }} aria-label="Cevap anahtarını kaldır"><Trash2 size={18} /></button></div>
+            ) : (
+              <label className="file-picker"><FileImage /><span><strong>Cevap anahtarını seçin</strong><small>JPG, PNG, WebP veya tek sayfalık PDF</small></span><input type="file" accept="image/jpeg,image/png,image/webp,.pdf,application/pdf" disabled={processing} onChange={(event) => { const file = event.target.files?.[0] ?? null; setAnswerKeyFile(file); setBookletFiles((c) => ({ ...c, A: file })); }} /></label>
+            )
           )}
         </article>
 
@@ -625,7 +730,7 @@ export function ScannerPage() {
       {results.length > 0 && (
         <section className="result-preview">
           <div className="section-title-row"><div><h2>Checkpoint sonuçları</h2><p>{results.length} öğrenci sonucu tarayıcıya kalıcı olarak kaydedildi. İşlem yarıda kesilse de bu verileri indirebilirsiniz.</p></div>{savedSessionId && <Link className="button button-primary" to={`/sonuclar/${savedSessionId}`}>Ayrıntılı sonuçları aç <ChevronRight size={18} /></Link>}</div>
-          <div className="table-scroll"><table><thead><tr><th>Öğrenci no</th><th>Part</th><th>Dosya</th><th>Doğru</th><th>Yanlış</th><th>Boş</th><th>Net</th></tr></thead><tbody>{results.slice(0, 200).map((result) => <tr key={result.id}><td><strong>{result.studentNumber}</strong>{result.studentNumberNeedsReview && <span className="review-dot" title="Kontrol gerekli" />}</td><td>{(result.partIndex ?? 0) + 1}</td><td>{result.sourceName}</td><td className="text-success">{result.score.correct}</td><td className="text-danger">{result.score.wrong}</td><td>{result.score.blank}</td><td><strong>{result.score.net}</strong></td></tr>)}</tbody></table></div>
+          <div className="table-scroll"><table><thead><tr><th>Öğrenci no</th><th>Kitapçık</th><th>Part</th><th>Dosya</th><th>Doğru</th><th>Yanlış</th><th>Boş</th><th>Net</th></tr></thead><tbody>{results.slice(0, 200).map((result) => <tr key={result.id}><td><strong>{result.studentNumber}</strong>{result.studentNumberNeedsReview && <span className="review-dot" title="Kontrol gerekli" />}</td><td><span className={`booklet-chip booklet-${result.booklet ?? 'A'}`}>{result.booklet ?? 'A'}</span></td><td>{(result.partIndex ?? 0) + 1}</td><td>{result.sourceName}</td><td className="text-success">{result.score.correct}</td><td className="text-danger">{result.score.wrong}</td><td>{result.score.blank}</td><td><strong>{result.score.net}</strong></td></tr>)}</tbody></table></div>
         </section>
       )}
     </div>

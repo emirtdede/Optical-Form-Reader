@@ -17,6 +17,8 @@ function student(id: string, percentage: number, firstStatus: 'correct' | 'wrong
     studentNumber: `1234${id}`,
     studentNumberSource: 'form',
     studentNumberNeedsReview: false,
+    booklet: 'A',
+    bookletNeedsReview: false,
     sourceName: `${id}.png`,
     processedAt: '2026-07-21T12:00:00.000Z',
     score: { correct: 100 - wrong - blank, wrong, blank, ambiguous: 0, net: 100 - wrong - blank - wrong / 4, percentage, score100: percentage, gpa4: 4.0, letterGrade: 'AA' },
