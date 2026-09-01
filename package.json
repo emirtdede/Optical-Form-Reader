@@ -1,0 +1,47 @@
+{
+  "name": "optik-form-okuyucu",
+  "version": "2.1.0",
+  "description": "Görüntü ve PDF'leri cihazdan çıkarmadan 100 soruluk optik formları partlar halinde değerlendiren yerel-first web uygulaması.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 8081",
+    "build": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json && vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 8081",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run build && npm test && npm run audit:prod",
+    "audit:prod": "npm audit --omit=dev"
+  },
+  "dependencies": {
+    "@techstark/opencv-js": "5.0.0-release.1",
+    "exceljs": "4.4.0",
+    "idb": "8.0.3",
+    "jspdf": "4.2.1",
+    "jspdf-autotable": "5.0.8",
+    "jszip": "3.10.1",
+    "lucide-react": "1.25.0",
+    "pdfjs-dist": "6.1.200",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-router-dom": "^7.18.3"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.0",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "5.1.1",
+    "fake-indexeddb": "6.2.4",
+    "jsdom": "27.2.0",
+    "typescript": "5.9.3",
+    "vite": "7.3.6",
+    "vitest": "4.1.10"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
+  }
+}

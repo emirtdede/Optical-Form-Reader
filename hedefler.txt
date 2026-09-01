@@ -1,0 +1,11 @@
+ileride bir şablon mağazası bulunur bu mağazadan şablonlar indirilebilir ve bu şablonların sonuçları taratılabilir.
+
+mevcut şablonda bulunan 4 alan 0 - 25 - 50 - 75 alanları için başlıklar kullanıcı tarafından girilebilir olmalı
+
+örneğin ilk 25 Türkçe sonra sosyal - matematik - fen
+
+bunlar ayrı ayrı hesaplanabilir olmalı
+
+her soru için ayrı katsayı değeri girilebilir
+
+kaç üzerinden puan hesaplaması yapılacağı gibi matematiksel işlemler eklenebilir.
