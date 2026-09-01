@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyRelativeGrading, calculateSectionScores, getDefaultSections, scoreToGpaAndLetter, tScoreToLetterGrade } from './grading';
+import { applyRelativeGrading, calculateSectionScores, getDefaultSections, getPresetSections, scoreToGpaAndLetter, tScoreToLetterGrade } from './grading';
 import { CHOICES, type AnswerChoice, type QuestionResult, type StudentResult } from '../types';
 
 describe('grading domain', () => {
@@ -15,13 +15,27 @@ describe('grading domain', () => {
     expect(scoreToGpaAndLetter(42)).toEqual({ letterGrade: 'FF', gpa4: 0.0 });
   });
 
-  it('varsayılan 4 eşit bölüm şablonunu (25er soru) doğru oluşturur', () => {
-    const sections = getDefaultSections();
-    expect(sections).toHaveLength(4);
-    expect(sections[0]).toEqual({ id: 'sec-1', name: 'Bölüm 1', startQuestion: 1, endQuestion: 25, weight: 1 });
-    expect(sections[1]).toEqual({ id: 'sec-2', name: 'Bölüm 2', startQuestion: 26, endQuestion: 50, weight: 1 });
-    expect(sections[2]).toEqual({ id: 'sec-3', name: 'Bölüm 3', startQuestion: 51, endQuestion: 75, weight: 1 });
-    expect(sections[3]).toEqual({ id: 'sec-4', name: 'Bölüm 4', startQuestion: 76, endQuestion: 100, weight: 1 });
+  it('1, 2 ve 4 bölümlük hazır şablonları doğru oluşturur', () => {
+    // 1 Bölüm
+    const sec1 = getPresetSections(1);
+    expect(sec1).toHaveLength(1);
+    expect(sec1[0]).toEqual({ id: 'sec-1', name: 'Bölüm 1', startQuestion: 1, endQuestion: 100, weight: 1 });
+
+    // 2 Bölüm
+    const sec2 = getPresetSections(2);
+    expect(sec2).toHaveLength(2);
+    expect(sec2[0]).toEqual({ id: 'sec-1', name: 'Bölüm 1', startQuestion: 1, endQuestion: 50, weight: 1 });
+    expect(sec2[1]).toEqual({ id: 'sec-2', name: 'Bölüm 2', startQuestion: 51, endQuestion: 100, weight: 1 });
+
+    // 4 Bölüm & Varsayılan
+    const sec4 = getPresetSections(4);
+    expect(sec4).toHaveLength(4);
+    expect(sec4[0]).toEqual({ id: 'sec-1', name: 'Bölüm 1', startQuestion: 1, endQuestion: 25, weight: 1 });
+    expect(sec4[1]).toEqual({ id: 'sec-2', name: 'Bölüm 2', startQuestion: 26, endQuestion: 50, weight: 1 });
+    expect(sec4[2]).toEqual({ id: 'sec-3', name: 'Bölüm 3', startQuestion: 51, endQuestion: 75, weight: 1 });
+    expect(sec4[3]).toEqual({ id: 'sec-4', name: 'Bölüm 4', startQuestion: 76, endQuestion: 100, weight: 1 });
+
+    expect(getDefaultSections()).toEqual(sec4);
   });
 
   it('cevapları tanımlı bölümlere göre ayırarak ayrı ayrı notlandırır', () => {

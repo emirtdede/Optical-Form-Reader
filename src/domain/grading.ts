@@ -26,15 +26,33 @@ export function scoreToGpaAndLetter(score100: number): { gpa4: number; letterGra
 }
 
 /**
- * Varsayılan 4 eşit parçalı (1-25, 26-50, 51-75, 76-100) bölüm şablonu üretir.
+ * 1, 2 veya 4 eşit parçalı hazır bölüm şablonu üretir.
  */
-export function getDefaultSections(): ExamSection[] {
+export function getPresetSections(count: 1 | 2 | 4): ExamSection[] {
+  if (count === 1) {
+    return [
+      { id: 'sec-1', name: 'Bölüm 1', startQuestion: 1, endQuestion: 100, weight: 1 },
+    ];
+  }
+  if (count === 2) {
+    return [
+      { id: 'sec-1', name: 'Bölüm 1', startQuestion: 1, endQuestion: 50, weight: 1 },
+      { id: 'sec-2', name: 'Bölüm 2', startQuestion: 51, endQuestion: 100, weight: 1 },
+    ];
+  }
   return [
     { id: 'sec-1', name: 'Bölüm 1', startQuestion: 1, endQuestion: 25, weight: 1 },
     { id: 'sec-2', name: 'Bölüm 2', startQuestion: 26, endQuestion: 50, weight: 1 },
     { id: 'sec-3', name: 'Bölüm 3', startQuestion: 51, endQuestion: 75, weight: 1 },
     { id: 'sec-4', name: 'Bölüm 4', startQuestion: 76, endQuestion: 100, weight: 1 },
   ];
+}
+
+/**
+ * Varsayılan 4 eşit parçalı (1-25, 26-50, 51-75, 76-100) bölüm şablonu üretir.
+ */
+export function getDefaultSections(): ExamSection[] {
+  return getPresetSections(4);
 }
 
 /**
