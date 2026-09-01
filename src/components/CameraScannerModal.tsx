@@ -317,10 +317,10 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
 
               {isPermissionDenied ? (
                 <div className="permission-guide-card">
-                  <h4>💡 Bilgisayar ve Telefonlarda Kamera İzni Nasıl Verilir?</h4>
+                  <h4>Bilgisayar ve Telefonlarda Kamera İzni Nasıl Verilir?</h4>
                   <ol className="permission-steps-list">
                     <li>
-                      <strong>1. Adım:</strong> Tarayıcınızın adres çubuğundaki (URL'nin solundaki) <strong>Kilit 🔒 / Site Ayarları</strong> simgesine tıklayın.
+                      <strong>1. Adım:</strong> Tarayıcınızın adres çubuğundaki (URL solundaki) <strong>Kilit / Site Bilgisi</strong> simgesine tıklayın.
                     </li>
                     <li>
                       <strong>2. Adım:</strong> Açılan menüde <strong>Kamera</strong> seçeneğini <strong>"İzin Ver (Allow)"</strong> konumuna getirin.

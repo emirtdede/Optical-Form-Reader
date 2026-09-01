@@ -660,7 +660,7 @@ export function ScannerPage() {
           <div className="setup-card-top"><span className="setup-number">02</span><div><h2>Öğrenci formları</h2><p>Sabit adet sınırı yok · PDF sayfaları ayrı formdur</p></div><span className="file-count-badge">{queue.length} form</span></div>
           <div className="drop-zone" onDragOver={(event) => event.preventDefault()} onDrop={handleDrop}>
             <FolderOpen /><span><strong>Kamera ile canlı tarayın veya dosyaları buraya bırakın</strong><small>JPG, PNG, WebP, PDF ve görüntü içeren ZIP</small></span>
-            <div className="drop-zone-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center', marginTop: 4 }}>
+            <div className="drop-zone-actions">
               <button
                 type="button"
                 className="button button-primary camera-scan-btn"
@@ -670,7 +670,10 @@ export function ScannerPage() {
               >
                 <Camera size={17} /> Canlı Kamera ile Tara
               </button>
-              <label className="button button-secondary"><Files size={17} /> Toplu Dosya Seç<input type="file" multiple accept="image/jpeg,image/png,image/webp,.pdf,application/pdf,.zip,application/zip" disabled={processing} onChange={handleStudentFiles} /></label>
+              <label className="button button-secondary">
+                <Files size={17} /> Toplu Dosya Seç
+                <input type="file" multiple accept="image/jpeg,image/png,image/webp,.pdf,application/pdf,.zip,application/zip" disabled={processing} onChange={handleStudentFiles} />
+              </label>
             </div>
           </div>
         </article>
