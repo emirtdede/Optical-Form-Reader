@@ -76,8 +76,19 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
       setIsTorchOn(controller.isTorchOn);
 
       if (videoRef.current) {
-        videoRef.current.srcObject = controller.stream;
-        await videoRef.current.play();
+        const video = videoRef.current;
+        video.muted = true;
+        video.defaultMuted = true;
+        video.playsInline = true;
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('muted', 'true');
+        video.srcObject = controller.stream;
+
+        try {
+          await video.play();
+        } catch (playErr) {
+          console.warn('Video oynatma bildirimi:', playErr);
+        }
       }
 
       // Kullanılabilir kameraları listele
@@ -349,7 +360,13 @@ export function CameraScannerModal({ isOpen, onClose, onAddFiles }: CameraScanne
           )}
 
           <video
-            ref={videoRef}
+            ref={(el) => {
+              videoRef.current = el;
+              if (el) {
+                el.muted = true;
+                el.defaultMuted = true;
+              }
+            }}
             className="camera-video-stream"
             playsInline
             muted

@@ -119,13 +119,7 @@ export async function requestCameraStream(options: CameraStreamOptions = {}): Pr
       }
     } catch (err) {
       lastError = err;
-      // Kullanıcı izni açıkça reddettiyse (NotAllowedError), gereksiz yere döngüyü sürdürme, hemen hata fırlat
-      if (
-        err instanceof DOMException &&
-        (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError')
-      ) {
-        throw err;
-      }
+      // Aday başarısız olursa sonraki daha basit kısıtlamayı dene (örn. fallback: { video: true })
     }
   }
 
